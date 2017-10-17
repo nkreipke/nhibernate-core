@@ -360,5 +360,37 @@ namespace NHibernate.Test.Futures
 				}
 			}
 		}
+
+		[Test]
+		public void ToFutureValueWithSumReturnsResult()
+		{
+			// Prepare data
+			using (var s = OpenSession())
+			using (var tx = s.BeginTransaction())
+			{
+				s.Save(new Person());
+				s.Save(new Person());
+				tx.Commit();
+			}
+
+			using (var s = OpenSession())
+			{
+				var personsSum = s.Query<Person>()
+					.Select(x => x.Id)
+					//.Sum();
+					.ToFutureValue(x => x.Sum());
+
+				Assert.IsNotNull(personsSum);
+				Assert.NotZero(personsSum.Value);
+			}
+
+			// Cleanup
+			using (var s = OpenSession())
+			using (var tx = s.BeginTransaction())
+			{
+				s.Delete("from Person");
+				tx.Commit();
+			}
+		}
 	}
 }
